@@ -80,13 +80,8 @@
             m_Stream = new IntPtr(container.InputContext->streams[streamIndex]);
             StreamInfo = container.MediaInfo.Streams[streamIndex];
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
             // Set default codec context options from probed stream
-            // var setCodecParamsResult = ffmpeg.avcodec_parameters_to_context(CodecContext, Stream->codecpar);
-            var setCodecParamsResult = ffmpeg.avcodec_copy_context(CodecContext, Stream->codec);
-#pragma warning restore CS0618 // Type or member is obsolete
-
+            var setCodecParamsResult = ffmpeg.avcodec_parameters_to_context(CodecContext, Stream->codecpar);
             if (setCodecParamsResult < 0)
             {
                 this.LogWarning(Aspects.Component,
@@ -154,9 +149,8 @@
                     // process the low res option
                     if (decoderOptions.LowResolutionIndex != VideoResolutionDivider.Full && codec->max_lowres > 0)
                     {
-                        var lowResOption = Math.Min((byte)decoderOptions.LowResolutionIndex, codec->max_lowres)
+                        decoderOptions.LowResIndexOption = Math.Min((byte)decoderOptions.LowResolutionIndex, codec->max_lowres)
                             .ToString(CultureInfo.InvariantCulture);
-                        decoderOptions.LowResIndexOption = lowResOption;
                     }
 
                     // Ensure ref counted frames for audio and video decoding

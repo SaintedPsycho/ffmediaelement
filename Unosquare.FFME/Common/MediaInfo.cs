@@ -114,12 +114,7 @@
                 var s = inputContext->streams[i];
 
                 var codecContext = ffmpeg.avcodec_alloc_context3(null);
-
-#pragma warning disable CS0618 // Type or member is obsolete
-
-                // ffmpeg.avcodec_parameters_to_context(codecContext, s->codecpar);
-                ffmpeg.avcodec_copy_context(codecContext, s->codec);
-#pragma warning restore CS0618 // Type or member is obsolete
+                ffmpeg.avcodec_parameters_to_context(codecContext, s->codecpar);
 
                 var bitsPerSample = codecContext->codec_type == AVMediaType.AVMEDIA_TYPE_AUDIO ?
                     ffmpeg.av_get_bits_per_sample(codecContext->codec_id) : 0;
@@ -145,12 +140,12 @@
                     PixelHeight = codecContext->height,
                     HasClosedCaptions = (codecContext->properties & ffmpeg.FF_CODEC_PROPERTY_CLOSED_CAPTIONS) != 0,
                     IsLossless = (codecContext->properties & ffmpeg.FF_CODEC_PROPERTY_LOSSLESS) != 0,
-                    Channels = codecContext->channels,
+                    Channels = codecContext->ch_layout.nb_channels,
                     BitRate = bitsPerSample > 0 ?
-                        bitsPerSample * codecContext->channels * codecContext->sample_rate :
+                        bitsPerSample * codecContext->ch_layout.nb_channels * codecContext->sample_rate :
                         codecContext->bit_rate,
                     MaxBitRate = codecContext->rc_max_rate,
-                    InfoFrameCount = s->codec_info_nb_frames,
+                    InfoFrameCount = (int)s->nb_frames,
                     TimeBase = s->time_base,
                     SampleFormat = codecContext->sample_fmt,
                     SampleRate = codecContext->sample_rate,
@@ -258,7 +253,7 @@
                     StartTime = c->start.ToTimeSpan(c->time_base),
                     EndTime = c->end.ToTimeSpan(c->time_base),
                     Index = i,
-                    ChapterId = c->id,
+                    ChapterId = (int)c->id,
                     Metadata = FFDictionary.ToDictionary(c->metadata)
                 };
 

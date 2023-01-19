@@ -207,7 +207,7 @@
         public override bool MaterializeFrame(MediaFrame input, ref MediaBlock output, MediaBlock previousBlock)
         {
             if (output == null) output = new VideoBlock();
-            if (input is VideoFrame == false || output is VideoBlock == false)
+            if (input is not VideoFrame || output is not VideoBlock)
                 throw new ArgumentNullException($"{nameof(input)} and {nameof(output)} are either null or not of a compatible media type '{MediaType}'");
 
             var source = (VideoFrame)input;

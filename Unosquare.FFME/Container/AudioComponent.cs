@@ -47,7 +47,7 @@
         internal AudioComponent(MediaContainer container, int streamIndex)
             : base(container, streamIndex)
         {
-            Channels = CodecContext->channels;
+            Channels = CodecContext->ch_layout.nb_channels;
             SampleRate = CodecContext->sample_rate;
             BitsPerSample = ffmpeg.av_samples_get_buffer_size(null, 1, 1, CodecContext->sample_fmt, 1) * 8;
         }
@@ -84,7 +84,7 @@
         public override bool MaterializeFrame(MediaFrame input, ref MediaBlock output, MediaBlock previousBlock)
         {
             if (output == null) output = new AudioBlock();
-            if (input is AudioFrame == false || output is AudioBlock == false)
+            if (input is not AudioFrame || output is not AudioBlock)
                 throw new ArgumentNullException($"{nameof(input)} and {nameof(output)} are either null or not of a compatible media type '{MediaType}'");
 
             var source = (AudioFrame)input;
@@ -96,18 +96,23 @@
             var targetSpec = FFAudioParams.CreateTarget(source.Pointer);
 
             // Initialize or update the audio scaler if required
-            if (Scaler == null || LastSourceSpec == null || FFAudioParams.AreCompatible(LastSourceSpec, sourceSpec) == false)
+            if (Scaler == null || LastSourceSpec == null || !FFAudioParams.AreCompatible(LastSourceSpec, sourceSpec))
             {
-                Scaler = ffmpeg.swr_alloc_set_opts(
-                    Scaler,
-                    targetSpec.ChannelLayout,
+                SwrContext* scaler = ffmpeg.swr_alloc();
+                AVChannelLayout sourceChannelLayout = sourceSpec.ChannelLayout;
+                AVChannelLayout targetChannelLayout = targetSpec.ChannelLayout;
+
+                ffmpeg.swr_alloc_set_opts2(
+                    &scaler,
+                    &targetChannelLayout,
                     targetSpec.Format,
                     targetSpec.SampleRate,
-                    sourceSpec.ChannelLayout,
+                    &sourceChannelLayout,
                     sourceSpec.Format,
                     sourceSpec.SampleRate,
                     0,
                     null);
+                Scaler = scaler;
 
                 RC.Current.Add(Scaler);
                 ffmpeg.swr_init(Scaler);
@@ -116,10 +121,11 @@
 
             // Allocate the unmanaged output buffer and convert to stereo.
             int outputSamplesPerChannel;
-            if (target.Allocate(targetSpec.BufferLength) &&
-                target.TryAcquireWriterLock(out var writeLock))
+            IDisposable writeLock = null;
+            try
             {
-                using (writeLock)
+                if (target.Allocate(targetSpec.BufferLength) &&
+                    target.TryAcquireWriterLock(out writeLock))
                 {
                     var outputBufferPtr = (byte*)target.Buffer;
 
@@ -131,10 +137,14 @@
                         source.Pointer->extended_data,
                         source.Pointer->nb_samples);
                 }
+                else
+                {
+                    return false;
+                }
             }
-            else
+            finally
             {
-                return false;
+                writeLock?.Dispose();
             }
 
             // Compute the buffer length
@@ -143,10 +153,10 @@
 
             // Flag the block if we have to
             target.PresentationTime = source.PresentationTime;
-            target.IsStartTimeGuessed = source.HasValidStartTime == false;
+            target.IsStartTimeGuessed = !source.HasValidStartTime;
 
             // Try to fix the start time, duration and End time if we don't have valid data
-            if (source.HasValidStartTime == false && previousBlock != null)
+            if (!source.HasValidStartTime && previousBlock != null)
             {
                 // Get timing information from the previous block
                 target.StartTime = TimeSpan.FromTicks(previousBlock.EndTime.Ticks + 1);
@@ -177,7 +187,7 @@
         {
             // Validate the audio frame
             var frame = (AVFrame*)framePointer;
-            if (framePointer == IntPtr.Zero || frame->channels <= 0 || frame->nb_samples <= 0 || frame->sample_rate <= 0)
+            if (framePointer == IntPtr.Zero || frame->ch_layout.nb_channels <= 0 || frame->nb_samples <= 0 || frame->sample_rate <= 0)
                 return null;
 
             // Init the filter graph for the frame
@@ -278,7 +288,7 @@
         private string ComputeFilterArguments(AVFrame* frame)
         {
             var hexChannelLayout = BitConverter.ToString(
-                BitConverter.GetBytes(frame->channel_layout).Reverse().ToArray()).ReplaceOrdinal("-", string.Empty);
+                BitConverter.GetBytes(frame->ch_layout.u.mask).Reverse().ToArray()).ReplaceOrdinal("-", string.Empty);
 
             var channelLayout = $"0x{hexChannelLayout}";
 

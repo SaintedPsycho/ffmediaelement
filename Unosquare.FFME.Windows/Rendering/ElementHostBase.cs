@@ -139,11 +139,11 @@
             if (action == null)
                 return Task.CompletedTask;
 
-            if (ElementDispatcher == null || ElementDispatcher.HasShutdownStarted || ElementDispatcher.HasShutdownFinished)
+            if (ElementDispatcher?.HasShutdownStarted != false || ElementDispatcher.HasShutdownFinished)
                 return Task.CompletedTask;
 
             if (Thread.CurrentThread != ElementDispatcher?.Thread)
-                return ElementDispatcher?.BeginInvoke(action, priority).Task;
+                return ElementDispatcher?.BeginInvoke(action, priority).Task ?? Task.CompletedTask;
 
             action();
             return Task.CompletedTask;
@@ -267,8 +267,7 @@
             {
                 if (PreventShutdown ||
                     !HasOwnDispatcher ||
-                    ElementDispatcher == null ||
-                    ElementDispatcher.HasShutdownStarted ||
+                    ElementDispatcher?.HasShutdownStarted != false ||
                     ElementDispatcher.HasShutdownFinished)
                 {
                     return;
@@ -383,7 +382,7 @@
         private sealed class HostedPresentationSource : PresentationSource, IDisposable
         {
             private readonly VisualTarget HostConnector;
-            private readonly AtomicBoolean m_IsDisposed = new AtomicBoolean(false);
+            private readonly AtomicBoolean m_IsDisposed = new(false);
 
             /// <summary>
             /// Initializes a new instance of the <see cref="HostedPresentationSource"/> class.
