@@ -117,6 +117,9 @@ namespace Unosquare.FFME.Engine
         /// <inheritdoc />
         protected override void ExecuteCycleLogic(CancellationToken ct)
         {
+            if (ct.IsCancellationRequested)
+                return;
+
             // Update Status Properties
             var main = MediaCore.Timing.ReferenceType;
             var all = MediaCore.Renderers.Keys.ToArray();

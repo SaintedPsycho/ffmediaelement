@@ -101,11 +101,11 @@
         /// <inheritdoc />
         public Task<WorkerState> PauseAsync()
         {
+            if (IsDisposed || IsDisposing)
+                return Task.FromResult(WorkerState);
+
             lock (SyncLock)
             {
-                if (IsDisposed || IsDisposing)
-                    return Task.FromResult(WorkerState);
-
                 if (WorkerState != WorkerState.Running)
                     return Task.FromResult(WorkerState);
 
@@ -241,11 +241,10 @@
         protected void ExecuteCyle()
         {
             // Recreate the token source -- applies to cycle logic and delay
-            var ts = TokenSource;
-            if (ts.IsCancellationRequested)
+            if (TokenSource.IsCancellationRequested)
             {
+                TokenSource.Dispose();
                 TokenSource = new CancellationTokenSource();
-                ts.Dispose();
             }
 
             if (WorkerState == WorkerState.Running)
