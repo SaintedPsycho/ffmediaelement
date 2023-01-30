@@ -84,7 +84,7 @@
         public override bool MaterializeFrame(MediaFrame input, ref MediaBlock output, MediaBlock previousBlock)
         {
             if (output == null) output = new AudioBlock();
-            if (input is AudioFrame == false || output is AudioBlock == false)
+            if (input is not AudioFrame || output is not AudioBlock)
                 throw new ArgumentNullException($"{nameof(input)} and {nameof(output)} are either null or not of a compatible media type '{MediaType}'");
 
             var source = (AudioFrame)input;
@@ -96,7 +96,7 @@
             var targetSpec = FFAudioParams.CreateTarget(source.Pointer);
 
             // Initialize or update the audio scaler if required
-            if (Scaler == null || LastSourceSpec == null || FFAudioParams.AreCompatible(LastSourceSpec, sourceSpec) == false)
+            if (Scaler == null || LastSourceSpec == null || !FFAudioParams.AreCompatible(LastSourceSpec, sourceSpec))
             {
                 Scaler = ffmpeg.swr_alloc_set_opts(
                     Scaler,

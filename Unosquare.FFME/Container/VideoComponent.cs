@@ -207,7 +207,7 @@
         public override bool MaterializeFrame(MediaFrame input, ref MediaBlock output, MediaBlock previousBlock)
         {
             if (output == null) output = new VideoBlock();
-            if (input is VideoFrame == false || output is VideoBlock == false)
+            if (input is not VideoFrame || output is not VideoBlock)
                 throw new ArgumentNullException($"{nameof(input)} and {nameof(output)} are either null or not of a compatible media type '{MediaType}'");
 
             var source = (VideoFrame)input;
@@ -311,7 +311,7 @@
             target.PictureType = source.PictureType;
 
             // Update the stream info object if we get Closed Caption Data
-            if (StreamInfo.HasClosedCaptions == false && target.ClosedCaptions.Count > 0)
+            if (!StreamInfo.HasClosedCaptions && target.ClosedCaptions.Count > 0)
                 StreamInfo.HasClosedCaptions = true;
 
             // Process the aspect ratio

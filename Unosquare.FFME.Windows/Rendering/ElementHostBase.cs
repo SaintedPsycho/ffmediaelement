@@ -267,8 +267,7 @@
             {
                 if (PreventShutdown ||
                     !HasOwnDispatcher ||
-                    ElementDispatcher == null ||
-                    ElementDispatcher.HasShutdownStarted ||
+                    ElementDispatcher?.HasShutdownStarted != false ||
                     ElementDispatcher.HasShutdownFinished)
                 {
                     return;

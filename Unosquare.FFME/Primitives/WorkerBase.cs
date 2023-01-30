@@ -8,15 +8,15 @@
 
     internal abstract class WorkerBase : IWorker
     {
-        private readonly object SyncLock = new object();
-        private readonly Stopwatch CycleClock = new Stopwatch();
-        private readonly ManualResetEventSlim WantedStateCompleted = new ManualResetEventSlim(true);
+        private readonly object SyncLock = new();
+        private readonly Stopwatch CycleClock = new();
+        private readonly ManualResetEventSlim WantedStateCompleted = new(true);
 
         private int m_IsDisposed;
         private int m_IsDisposing;
         private int m_WorkerState = (int)WorkerState.Created;
         private int m_WantedWorkerState = (int)WorkerState.Running;
-        private CancellationTokenSource TokenSource = new CancellationTokenSource();
+        private CancellationTokenSource TokenSource = new();
 
         protected WorkerBase(string name)
         {
@@ -162,7 +162,7 @@
         /// <param name="alsoManaged">Determines if managed resources hsould also be released.</param>
         protected virtual void Dispose(bool alsoManaged)
         {
-            StopAsync().Wait();
+            StopAsync().Wait(TimeSpan.FromSeconds(1.5));
 
             lock (SyncLock)
             {
@@ -240,11 +240,14 @@
         /// </summary>
         protected void ExecuteCyle()
         {
-            // Recreate the token source -- applies to cycle logic and delay
-            if (TokenSource.IsCancellationRequested)
+            lock (SyncLock)
             {
-                TokenSource.Dispose();
-                TokenSource = new CancellationTokenSource();
+                // Recreate the token source -- applies to cycle logic and delay
+                if (TokenSource.IsCancellationRequested)
+                {
+                    TokenSource.Dispose();
+                    TokenSource = new CancellationTokenSource();
+                }
             }
 
             if (WorkerState == WorkerState.Running)

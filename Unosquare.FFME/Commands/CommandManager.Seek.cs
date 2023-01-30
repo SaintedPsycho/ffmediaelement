@@ -5,7 +5,6 @@
     using Diagnostics;
     using Primitives;
     using System;
-    using System.Collections.Generic;
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -153,7 +152,6 @@
         private bool SeekMedia(SeekOperation seekOperation, CancellationToken ct)
         {
             // TODO: Handle Cancellation token ct
-            var result = false;
             var hasDecoderSeeked = false;
             var startTime = DateTime.UtcNow;
             var targetSeekMode = seekOperation.Mode;
@@ -197,7 +195,7 @@
                 // Signal the starting state clearing the packet buffer cache
                 // TODO: this may not be necessary because the container does this for us.
                 // explore the possibility of removing this line
-                MediaCore.Container.Components.ClearQueuedPackets(flushBuffers: true);
+                // MediaCore.Container.Components.ClearQueuedPackets(flushBuffers: true);
 
                 // Capture seek target adjustment
                 var adjustedSeekTarget = targetPosition;
@@ -235,7 +233,7 @@
                     // Decode all available queued packets into the media component blocks
                     foreach (var mt in all)
                     {
-                        while (MediaCore.Blocks[mt].IsFull == false && ct.IsCancellationRequested == false)
+                        while (!MediaCore.Blocks[mt].IsFull && !ct.IsCancellationRequested)
                         {
                             var frame = MediaCore.Container.Components[mt].ReceiveNextFrame();
                             if (frame == null) break;
@@ -245,27 +243,28 @@
                     }
 
                     // Align to the exact requested position on the main component
-                    while (MediaCore.Container.IsReadAborted == false && MediaCore.HasDecodingEnded == false && ct.IsCancellationRequested == false)
+                    while (MediaCore.ShouldReadMorePackets && ct.IsCancellationRequested == false && hasSeekBlocks == false)
                     {
                         // Check if we are already in range
                         hasSeekBlocks = TrySignalBlocksAvailable(targetSeekMode, mainBlocks, targetPosition, hasSeekBlocks);
-                        if (hasSeekBlocks) break;
 
                         // Read the next packet
-                        _ = MediaCore.Container.Read();
-                        IList<MediaFrame> frames = MediaCore.Container.Decode();
+                        var packetType = MediaCore.Container.Read();
+                        var blocks = MediaCore.Blocks[packetType];
+                        if (blocks == null) continue;
 
-                        foreach (var frame in frames)
+                        // Get the next frame
+                        if (blocks.RangeEndTime.Ticks < targetPosition.Ticks || blocks.IsFull == false)
                         {
-                            MediaBlockBuffer blocks = MediaCore.Blocks[frame.MediaType];
-                            blocks?.Add(frame, MediaCore.Container);
+                            blocks.Add(MediaCore.Container.Components[packetType].ReceiveNextFrame(), MediaCore.Container);
+                            hasSeekBlocks = TrySignalBlocksAvailable(targetSeekMode, mainBlocks, targetPosition, hasSeekBlocks);
                         }
                     }
                 }
 
                 // Find out what the final, best-effort position was
                 TimeSpan resultPosition;
-                if (mainBlocks.IsInRange(targetPosition) == false)
+                if (!mainBlocks.IsInRange(targetPosition))
                 {
                     // We don't have a a valid main range
                     var minStartTimeTicks = mainBlocks.RangeStartTime.Ticks;
@@ -285,7 +284,7 @@
                 }
 
                 // Write a new Real-time clock position now.
-                if (hasSeekBlocks == false)
+                if (!hasSeekBlocks)
                     MediaCore.ChangePlaybackPosition(resultPosition);
             }
             catch (Exception ex)
@@ -306,7 +305,7 @@
                 seekOperation.Dispose();
             }
 
-            return result;
+            return !hasSeekBlocks;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

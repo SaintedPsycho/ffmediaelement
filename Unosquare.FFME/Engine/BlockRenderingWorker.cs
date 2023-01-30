@@ -134,16 +134,20 @@ namespace Unosquare.FFME.Engine
                 WaitForSeekBlocks(main, ct);
 
                 // Ensure the RTC clocks match the playback position
-                AlignClocksToPlayback(main, all);
+                AlignClocksToPlayback(main, all, ct);
 
                 // Check for and enter a sync-buffering scenario
-                EnterSyncBuffering(main, all);
+                EnterSyncBuffering(main, all, ct);
 
                 // Render each of the Media Types if it is time to do so.
                 if (MediaOptions.UseParallelRendering)
+                {
                     ParallelRenderBlocks.Invoke(all);
+                }
                 else
+                {
                     SerialRenderBlocks.Invoke(all);
+                }
             }
             catch (Exception ex)
             {
@@ -188,37 +192,44 @@ namespace Unosquare.FFME.Engine
             using var vsync = new VerticalSyncContext();
             while (WorkerState != WorkerState.Stopped)
             {
-                if (!VerticalSyncContext.IsAvailable)
-                    State.VerticalSyncEnabled = false;
-
-                var performVersticalSyncWait =
-                    Container.Components.HasVideo &&
-                    MediaCore.Timing.GetIsRunning(MediaType.Video) &&
-                    State.VerticalSyncEnabled;
-
-                if (performVersticalSyncWait)
+                try
                 {
-                    // wait a few times as there is no need to move on to the next frame
-                    // if the remaining cycle time is more than twice the refresh rate.
-                    while (RemainingCycleTime.Ticks >= vsync.RefreshPeriod.Ticks * 2)
-                        vsync.WaitForBlank();
+                    if (!VerticalSyncContext.IsAvailable)
+                        State.VerticalSyncEnabled = false;
 
-                    // wait one last time for the actual v-sync
-                    if (RemainingCycleTime.Ticks > 0)
-                        vsync.WaitForBlank();
+                    var performVersticalSyncWait =
+                        Container.Components.HasVideo &&
+                        MediaCore.Timing.GetIsRunning(MediaType.Video) &&
+                        State.VerticalSyncEnabled;
+
+                    if (performVersticalSyncWait)
+                    {
+                        // wait a few times as there is no need to move on to the next frame
+                        // if the remaining cycle time is more than twice the refresh rate.
+                        while (!IsDisposed && !IsDisposing && RemainingCycleTime.Ticks >= vsync.RefreshPeriod.Ticks * 2)
+                            vsync.WaitForBlank();
+
+                        // wait one last time for the actual v-sync
+                        if (!IsDisposed && !IsDisposing && RemainingCycleTime.Ticks > 0)
+                            vsync.WaitForBlank();
+                    }
+                    else
+                    {
+                        // Perform a synthetic wait
+                        var waitTime = RemainingCycleTime;
+                        if (!IsDisposed && !IsDisposing && waitTime.Ticks > 0)
+                            QuantumWaiter.Wait(waitTime);
+                    }
+
+                    if (!TryBeginCycle())
+                        continue;
+
+                    ExecuteCyle();
                 }
-                else
+                catch (ObjectDisposedException)
                 {
-                    // Perform a synthetic wait
-                    var waitTime = RemainingCycleTime;
-                    if (waitTime.Ticks > 0)
-                        QuantumWaiter.Wait(waitTime);
+                    /* Worker has been disposed */
                 }
-
-                if (!TryBeginCycle())
-                    continue;
-
-                ExecuteCyle();
             }
         }
 
@@ -248,8 +259,9 @@ namespace Unosquare.FFME.Engine
         /// </summary>
         /// <param name="main">The main renderer component.</param>
         /// <param name="all">All the renderer components.</param>
+        /// <param name="ct">Cancellation token.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void AlignClocksToPlayback(MediaType main, MediaType[] all)
+        private void AlignClocksToPlayback(MediaType main, MediaType[] all, CancellationToken ct = default)
         {
             // we don't want to disturb the clock or align it if we are not ready
             if (Commands.HasPendingCommands)
@@ -259,6 +271,9 @@ namespace Unosquare.FFME.Engine
             {
                 foreach (var t in all)
                 {
+                    if (ct.IsCancellationRequested)
+                        return;
+
                     if (t == MediaType.Subtitle)
                         continue;
 
@@ -420,8 +435,9 @@ namespace Unosquare.FFME.Engine
         /// </summary>
         /// <param name="main">The main renderer component.</param>
         /// <param name="all">All the renderer components.</param>
+        /// <param name="ct">Cancellation token.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnterSyncBuffering(MediaType main, MediaType[] all)
+        private void EnterSyncBuffering(MediaType main, MediaType[] all, CancellationToken ct = default)
         {
             // Determine if Sync-buffering can be potentially entered.
             // Entering the sync-buffering state pauses the RTC and forces the decoder make
@@ -434,6 +450,9 @@ namespace Unosquare.FFME.Engine
 
             foreach (var t in all)
             {
+                if (ct.IsCancellationRequested)
+                    return;
+
                 if (t == MediaType.Subtitle || t == main)
                     continue;
 
