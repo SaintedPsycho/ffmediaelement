@@ -1,4 +1,6 @@
-﻿namespace Unosquare.FFME.Platform
+﻿// Ignore Spelling: Unosquare FFME
+
+namespace Unosquare.FFME.Platform
 {
     using FFmpeg.AutoGen.Native;
     using System;
@@ -42,7 +44,7 @@
             try
             {
                 // Include the ffmpeg directory in the search path
-                var loadResult = LibraryLoader.LoadNativeLibrary(
+                var loadResult = WindowsFunctionResolver.LoadLibrary(
                     Path.Combine(Library.FFmpegDirectory, SoundTouchLibrary));
 
                 if (loadResult == IntPtr.Zero)

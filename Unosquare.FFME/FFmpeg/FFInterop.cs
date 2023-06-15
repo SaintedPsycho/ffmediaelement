@@ -1,4 +1,6 @@
-﻿namespace FFmpeg.AutoGen
+﻿// Ignore Spelling: Codec Fmpeg Codecs
+
+namespace FFmpeg.AutoGen
 {
     using System;
     using System.Collections.Generic;

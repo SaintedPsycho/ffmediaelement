@@ -1,4 +1,6 @@
-﻿namespace Unosquare.FFME.Windows.Sample
+﻿// Ignore Spelling: App FFME Unosquare
+
+namespace Unosquare.FFME.Windows.Sample
 {
     using FFmpeg.AutoGen;
     using System;
@@ -19,8 +21,12 @@
         public App()
         {
             // Change the default location of the ffmpeg binaries (same directory as application)
+#if DEBUG
+            Library.FFmpegDirectory = @"D:\media-autobuild_suite-master\local64\ffmpeg-6.0";
+#else
             // You can get the 64-bit binaries here: https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full-shared.7z
             Library.FFmpegDirectory = @"c:\ffmpeg" + (Environment.Is64BitProcess ? @"\x64" : string.Empty);
+#endif
 
             // You can pick which FFmpeg binaries are loaded. See issue #28
             // For more specific control (issue #414) you can set Library.FFmpegLoadModeFlags to:

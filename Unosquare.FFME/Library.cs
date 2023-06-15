@@ -1,4 +1,6 @@
-﻿namespace Unosquare.FFME
+﻿// Ignore Spelling: Fmpeg
+
+namespace Unosquare.FFME
 {
     using Common;
     using Container;
