@@ -192,6 +192,11 @@ namespace Unosquare.FFME.Commands
         /// <inheritdoc />
         protected override void ExecuteCycleLogic(CancellationToken ct)
         {
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
+
             // Before anything, let's process priority commands
             var priorityCommand = PendingPriorityCommand;
             if (priorityCommand != PriorityCommandType.None)
@@ -205,7 +210,7 @@ namespace Unosquare.FFME.Commands
                 else if (priorityCommand == PriorityCommandType.Pause)
                     CommandPauseMedia();
                 else if (priorityCommand == PriorityCommandType.Stop)
-                    CommandStopMedia();
+                    CommandStopMedia(ct);
                 else
                     throw new NotSupportedException($"Command '{priorityCommand}' is not supported");
 
@@ -217,7 +222,7 @@ namespace Unosquare.FFME.Commands
             }
 
             // Perform current and queued seeks.
-            while (true)
+            while (!ct.IsCancellationRequested)
             {
                 SeekOperation seekOperation;
                 lock (SyncLock)
@@ -232,6 +237,11 @@ namespace Unosquare.FFME.Commands
 
                 ActiveSeekMode = seekOperation.Mode;
                 SeekMedia(seekOperation, ct);
+            }
+
+            if (ct.IsCancellationRequested)
+            {
+                return;
             }
 
             // Handle the case when there is no more seeking needed.
@@ -277,8 +287,14 @@ namespace Unosquare.FFME.Commands
 
             // wait for any pending direct commands (unlikely)
             this.LogDebug(Aspects.EngineCommand, "Dispose is waiting for pending direct commands.");
-            while (IsDirectCommandPending)
-                Task.Delay(Constants.DefaultTimingPeriod).Wait();
+            var pendingWaiter = Task.Factory.StartNew(async () =>
+            {
+                while (IsDirectCommandPending)
+                {
+                    await Task.Delay(Constants.DefaultTimingPeriod);
+                }
+            });
+            pendingWaiter.Wait(TimeSpan.FromSeconds(2));
 
             this.LogDebug(Aspects.EngineCommand, "Dispose is closing media.");
             try
@@ -299,11 +315,11 @@ namespace Unosquare.FFME.Commands
             // Call the base dispose method
             base.Dispose(alsoManaged);
 
-            // Dispose unmanged resources
+            // Dispose unmanaged resources
             PriorityCommandCompleted.Dispose();
             SeekBlocksAvailable.Dispose();
-            QueuedSeekOperation?.Dispose();
-            QueuedSeekOperation = null;
+
+            ClearSeekCommands();
             this.LogDebug(Aspects.EngineCommand, "Dispose completed.");
         }
 

@@ -32,7 +32,7 @@
             if (!TryBeginCycle())
                 return;
 
-            ExecuteCyle();
+            ExecuteCycle();
         }
     }
 }

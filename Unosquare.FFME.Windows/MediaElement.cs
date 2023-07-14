@@ -197,8 +197,7 @@ namespace Unosquare.FFME
 
             await videoView.InvokeAsync(() =>
             {
-                var source = videoView.Source?.Clone() as BitmapSource;
-                if (source == null)
+                if (videoView.Source?.Clone() is not BitmapSource source)
                     return;
 
                 source.Freeze();
@@ -214,7 +213,12 @@ namespace Unosquare.FFME
         }).ConfigureAwait(true);
 
         /// <inheritdoc />
-        public void Dispose() => Dispose(true);
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
         #endregion
 
@@ -476,16 +480,16 @@ namespace Unosquare.FFME
         /// <summary>
         /// Releases unmanaged and - optionally - managed resources.
         /// </summary>
-        /// <param name="alsoManaged"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
-        private void Dispose(bool alsoManaged)
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        private void Dispose(bool disposing)
         {
             if (!m_IsDisposed)
             {
-                if (alsoManaged)
+                if (disposing)
                 {
+                    UpdatesTimer.Stop();
                     MediaCore.Dispose();
                     VideoView.Dispose();
-                    UpdatesTimer.Stop();
                 }
 
                 m_IsDisposed = true;

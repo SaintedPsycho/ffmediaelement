@@ -169,7 +169,7 @@
         /// <summary>
         /// Detects the end of media in the decoding worker.
         /// </summary>
-        /// <returns>True if media docding has ended.</returns>
+        /// <returns>True if media decoding has ended.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool DetectHasDecodingEnded() =>
             DecodedFrameCount <= 0 &&

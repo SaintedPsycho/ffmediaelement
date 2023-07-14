@@ -197,12 +197,12 @@ namespace Unosquare.FFME.Engine
                     if (!VerticalSyncContext.IsAvailable)
                         State.VerticalSyncEnabled = false;
 
-                    var performVersticalSyncWait =
+                    var performVerticalSyncWait =
                         Container.Components.HasVideo &&
                         MediaCore.Timing.GetIsRunning(MediaType.Video) &&
                         State.VerticalSyncEnabled;
 
-                    if (performVersticalSyncWait)
+                    if (performVerticalSyncWait)
                     {
                         // wait a few times as there is no need to move on to the next frame
                         // if the remaining cycle time is more than twice the refresh rate.
@@ -224,7 +224,7 @@ namespace Unosquare.FFME.Engine
                     if (!TryBeginCycle())
                         continue;
 
-                    ExecuteCyle();
+                    ExecuteCycle();
                 }
                 catch (ObjectDisposedException)
                 {

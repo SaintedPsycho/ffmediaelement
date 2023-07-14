@@ -154,8 +154,13 @@
         {
             var bitmap = TargetBitmap;
             var target = TargetBitmapData;
-            if (bitmap == null || target == null || block == null || block.IsDisposed || !block.TryAcquireReaderLock(out var readLock))
+
+            IDisposable readLock = null;
+            if (bitmap == null || target == null || block == null || block.IsDisposed || !block.TryAcquireReaderLock(out readLock))
+            {
+                readLock?.Dispose();
                 return;
+            }
 
             // Lock the video block for reading
             try

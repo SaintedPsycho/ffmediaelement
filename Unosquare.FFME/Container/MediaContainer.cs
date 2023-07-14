@@ -9,6 +9,7 @@ namespace Unosquare.FFME.Container
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Threading;
 
     /// <summary>
     /// A container capable of opening an input url,
@@ -376,18 +377,19 @@ namespace Unosquare.FFME.Container
         /// Pass TimeSpan.MinValue to seek to the beginning of the stream.
         /// </summary>
         /// <param name="position">The position.</param>
+        /// <param name="ct">The ct.</param>
         /// <returns>
         /// The list of media frames.
         /// </returns>
         /// <exception cref="InvalidOperationException">No input context initialized.</exception>
-        public MediaFrame Seek(TimeSpan position)
+        public MediaFrame Seek(TimeSpan position, CancellationToken ct = default)
         {
             lock (ReadSyncRoot)
             {
                 if (IsDisposed) throw new ObjectDisposedException(nameof(MediaContainer));
                 if (InputContext == null) throw new InvalidOperationException(ExceptionMessageNoInputContext);
 
-                return StreamSeek(position);
+                return StreamSeek(position, ct);
             }
         }
 
@@ -1042,17 +1044,20 @@ namespace Unosquare.FFME.Container
         /// Seeks to the closest and lesser or equal key frame on the main component.
         /// </summary>
         /// <param name="desiredTargetTime">The target time.</param>
+        /// <param name="ct">The ct.</param>
         /// <returns>
         /// The seeked media frame.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private MediaFrame StreamSeek(TimeSpan desiredTargetTime)
+        private MediaFrame StreamSeek(TimeSpan desiredTargetTime, CancellationToken ct = default)
         {
             #region Setup
 
             // Select the seeking component
             var comp = Components.Seekable;
-            if (comp == null) return null;
+            if (comp == null || ct.IsCancellationRequested)
+                return null;
+
             MediaFrame frame = null;
 
             // Stream seeking by seeking component
@@ -1115,6 +1120,9 @@ namespace Unosquare.FFME.Container
             var isAtStartOfStream = false;
             while (isAtStartOfStream == false)
             {
+                if (ct.IsCancellationRequested)
+                    return null;
+
                 // Compute the seek target, mostly based on the relative Target Time
                 var seekTimestamp = streamSeekRelativeTime.ToLong(timeBase);
 

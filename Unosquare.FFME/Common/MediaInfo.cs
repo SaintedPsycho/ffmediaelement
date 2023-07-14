@@ -1,4 +1,6 @@
-﻿namespace Unosquare.FFME.Common
+﻿// Ignore Spelling: TBR TBC TBN Unosquare FFME
+
+namespace Unosquare.FFME.Common
 {
     using Container;
     using FFmpeg.AutoGen;
@@ -107,22 +109,19 @@
         private static List<StreamInfo> ExtractStreams(AVFormatContext* inputContext)
         {
             var result = new List<StreamInfo>(32);
-            if (inputContext->streams == null) return result;
+            if (inputContext == null || inputContext->streams == null)
+                return result;
 
             for (var i = 0; i < inputContext->nb_streams; i++)
             {
                 var s = inputContext->streams[i];
 
                 var codecContext = ffmpeg.avcodec_alloc_context3(null);
+                ffmpeg.avcodec_parameters_to_context(codecContext, s->codecpar);
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
-                // ffmpeg.avcodec_parameters_to_context(codecContext, s->codecpar);
-                ffmpeg.avcodec_copy_context(codecContext, s->codec);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-                var bitsPerSample = codecContext->codec_type == AVMediaType.AVMEDIA_TYPE_AUDIO ?
-                    ffmpeg.av_get_bits_per_sample(codecContext->codec_id) : 0;
+                var bitsPerSample = codecContext->codec_type == AVMediaType.AVMEDIA_TYPE_AUDIO
+                                    ? ffmpeg.av_get_bits_per_sample(codecContext->codec_id)
+                                    : 0;
 
                 var stream = new StreamInfo
                 {
@@ -139,24 +138,24 @@
                     PixelFormat = codecContext->pix_fmt,
                     FieldOrder = codecContext->field_order,
                     IsInterlaced = codecContext->field_order != AVFieldOrder.AV_FIELD_PROGRESSIVE
-                        && codecContext->field_order != AVFieldOrder.AV_FIELD_UNKNOWN,
+                                && codecContext->field_order != AVFieldOrder.AV_FIELD_UNKNOWN,
                     ColorRange = codecContext->color_range,
                     PixelWidth = codecContext->width,
                     PixelHeight = codecContext->height,
                     HasClosedCaptions = (codecContext->properties & ffmpeg.FF_CODEC_PROPERTY_CLOSED_CAPTIONS) != 0,
                     IsLossless = (codecContext->properties & ffmpeg.FF_CODEC_PROPERTY_LOSSLESS) != 0,
                     Channels = codecContext->channels,
-                    BitRate = bitsPerSample > 0 ?
-                        bitsPerSample * codecContext->channels * codecContext->sample_rate :
-                        codecContext->bit_rate,
+                    BitRate = bitsPerSample > 0
+                                ? bitsPerSample * codecContext->channels * codecContext->sample_rate
+                                : codecContext->bit_rate,
                     MaxBitRate = codecContext->rc_max_rate,
                     InfoFrameCount = s->codec_info_nb_frames,
                     TimeBase = s->time_base,
                     SampleFormat = codecContext->sample_fmt,
                     SampleRate = codecContext->sample_rate,
-                    DisplayAspectRatio = codecContext->height > 0 ?
-                        ffmpeg.av_d2q((double)codecContext->width / codecContext->height, int.MaxValue) :
-                        default,
+                    DisplayAspectRatio = codecContext->height > 0
+                                          ? ffmpeg.av_d2q((double)codecContext->width / codecContext->height, int.MaxValue)
+                                          : default,
                     SampleAspectRatio = codecContext->sample_aspect_ratio,
                     Disposition = s->disposition,
                     StartTime = s->start_time.ToTimeSpan(s->time_base),

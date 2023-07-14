@@ -103,14 +103,14 @@
         /// Provides the implementation for the Stop Media Command.
         /// </summary>
         /// <returns>True if the command was successful.</returns>
-        private bool CommandStopMedia()
+        private bool CommandStopMedia(CancellationToken ct = default)
         {
             if (State.IsSeekable == false)
                 return false;
 
             MediaCore.ResetPlaybackPosition();
 
-            SeekMedia(new SeekOperation(TimeSpan.MinValue, SeekMode.Stop), CancellationToken.None);
+            SeekMedia(new SeekOperation(TimeSpan.MinValue, SeekMode.Stop), ct);
 
             foreach (var renderer in MediaCore.Renderers.Values)
                 renderer.OnStop();

@@ -117,12 +117,12 @@
         public void Dispose() => Dispose(true);
 
         /// <summary>
-        /// Pauses the specified wrokers.
+        /// Pauses the specified workers.
         /// </summary>
         /// <param name="wait">if set to <c>true</c> waits for the operation to complete.</param>
-        /// <param name="read">if set to <c>true</c> executes the opration on the reading worker.</param>
-        /// <param name="decode">if set to <c>true</c> executes the opration on the decoding worker.</param>
-        /// <param name="render">if set to <c>true</c> executes the opration on the rendering worker.</param>
+        /// <param name="read">if set to <c>true</c> executes the operation on the reading worker.</param>
+        /// <param name="decode">if set to <c>true</c> executes the operation on the decoding worker.</param>
+        /// <param name="render">if set to <c>true</c> executes the operation on the rendering worker.</param>
         private void Pause(bool wait, bool read, bool decode, bool render)
         {
             if (IsDisposed)
@@ -133,12 +133,12 @@
         }
 
         /// <summary>
-        /// Resumes the specified wrokers.
+        /// Resumes the specified workers.
         /// </summary>
         /// <param name="wait">if set to <c>true</c> waits for the operation to complete.</param>
-        /// <param name="read">if set to <c>true</c> executes the opration on the reading worker.</param>
-        /// <param name="decode">if set to <c>true</c> executes the opration on the decoding worker.</param>
-        /// <param name="render">if set to <c>true</c> executes the opration on the rendering worker.</param>
+        /// <param name="read">if set to <c>true</c> executes the operation on the reading worker.</param>
+        /// <param name="decode">if set to <c>true</c> executes the operation on the decoding worker.</param>
+        /// <param name="render">if set to <c>true</c> executes the operation on the rendering worker.</param>
         private void Resume(bool wait, bool read, bool decode, bool render)
         {
             if (IsDisposed) return;

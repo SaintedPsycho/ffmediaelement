@@ -89,7 +89,7 @@
             var kvpEntry = ffmpeg.av_dict_get(dictionary, string.Empty, null, ffmpeg.AV_DICT_IGNORE_SUFFIX);
             while (kvpEntry != null)
             {
-                result[Utilities.PtrToStringUTF8(kvpEntry->key)] = Utilities.PtrToStringUTF8(kvpEntry->value);
+                result.Add(Utilities.PtrToStringUTF8(kvpEntry->key), Utilities.PtrToStringUTF8(kvpEntry->value));
                 kvpEntry = ffmpeg.av_dict_get(dictionary, string.Empty, kvpEntry, ffmpeg.AV_DICT_IGNORE_SUFFIX);
             }
 

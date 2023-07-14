@@ -138,7 +138,10 @@
             {
                 QueuedSeekOperation?.Dispose();
                 QueuedSeekOperation = null;
+
+                QueuedSeekTask?.Dispose();
                 QueuedSeekTask = null;
+
                 IsSeeking = false;
             }
         }
@@ -151,7 +154,12 @@
         /// <returns>True if the operation was successful.</returns>
         private bool SeekMedia(SeekOperation seekOperation, CancellationToken ct)
         {
-            // TODO: Handle Cancellation token ct
+            if (seekOperation.IsDisposed || ct.IsCancellationRequested)
+            {
+                seekOperation?.Dispose();
+                return false;
+            }
+
             var hasDecoderSeeked = false;
             var startTime = DateTime.UtcNow;
             var targetSeekMode = seekOperation.Mode;
@@ -186,11 +194,21 @@
                 // Let consumers know main blocks are not available
                 hasDecoderSeeked = true;
 
+                if (seekOperation.IsDisposed || ct.IsCancellationRequested)
+                {
+                    return false;
+                }
+
                 // wait for the current reading and decoding cycles
                 // to finish. We don't want to interfere with reading in progress
                 // or decoding in progress.
                 MediaCore.Workers.PauseReadDecode();
                 SeekBlocksAvailable.Reset();
+
+                if (seekOperation.IsDisposed || ct.IsCancellationRequested)
+                {
+                    return false;
+                }
 
                 // Signal the starting state clearing the packet buffer cache
                 // TODO: this may not be necessary because the container does this for us.
@@ -209,7 +227,7 @@
                 }
 
                 // Populate frame queues with after-seek operation
-                var firstFrame = MediaCore.Container.Seek(adjustedSeekTarget);
+                var firstFrame = MediaCore.Container.Seek(adjustedSeekTarget, ct);
                 if (firstFrame != null)
                 {
                     // if we seeked to minvalue we really meant the first frame start time
@@ -233,7 +251,7 @@
                     // Decode all available queued packets into the media component blocks
                     foreach (var mt in all)
                     {
-                        while (!MediaCore.Blocks[mt].IsFull && !ct.IsCancellationRequested)
+                        while (!MediaCore.Blocks[mt].IsFull && !seekOperation.IsDisposed && !ct.IsCancellationRequested)
                         {
                             var frame = MediaCore.Container.Components[mt].ReceiveNextFrame();
                             if (frame == null) break;
@@ -243,23 +261,36 @@
                     }
 
                     // Align to the exact requested position on the main component
-                    while (MediaCore.ShouldReadMorePackets && ct.IsCancellationRequested == false && hasSeekBlocks == false)
+                    while (MediaCore.ShouldReadMorePackets && !seekOperation.IsDisposed && !ct.IsCancellationRequested && !hasSeekBlocks)
                     {
                         // Check if we are already in range
                         hasSeekBlocks = TrySignalBlocksAvailable(targetSeekMode, mainBlocks, targetPosition, hasSeekBlocks);
+                        if (hasSeekBlocks)
+                            break;
 
                         // Read the next packet
                         var packetType = MediaCore.Container.Read();
-                        var blocks = MediaCore.Blocks[packetType];
-                        if (blocks == null) continue;
-
-                        // Get the next frame
-                        if (blocks.RangeEndTime.Ticks < targetPosition.Ticks || blocks.IsFull == false)
+                        if (packetType == MediaType.None)
                         {
-                            blocks.Add(MediaCore.Container.Components[packetType].ReceiveNextFrame(), MediaCore.Container);
-                            hasSeekBlocks = TrySignalBlocksAvailable(targetSeekMode, mainBlocks, targetPosition, hasSeekBlocks);
+                            break;
+                        }
+
+                        // Get the next frames
+                        var frames = MediaCore.Container.Decode();
+                        foreach (var frame in frames)
+                        {
+                            if (seekOperation.IsDisposed || ct.IsCancellationRequested)
+                                return !hasSeekBlocks;
+
+                            var blocks = MediaCore.Blocks[frame.MediaType];
+                            blocks?.Add(frame, MediaCore.Container);
                         }
                     }
+                }
+
+                if (seekOperation.IsDisposed || ct.IsCancellationRequested)
+                {
+                    return false;
                 }
 
                 // Find out what the final, best-effort position was
@@ -284,7 +315,7 @@
                 }
 
                 // Write a new Real-time clock position now.
-                if (!hasSeekBlocks)
+                if (!hasSeekBlocks && !seekOperation.IsDisposed && !ct.IsCancellationRequested)
                     MediaCore.ChangePlaybackPosition(resultPosition);
             }
             catch (Exception ex)
@@ -338,7 +369,6 @@
         private sealed class SeekOperation : IDisposable
         {
             private readonly object SyncLock = new object();
-            private bool IsDisposed;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SeekOperation"/> class.
@@ -350,6 +380,8 @@
                 Position = position;
                 Mode = mode;
             }
+
+            public bool IsDisposed { get; private set; }
 
             /// <summary>
             /// Gets or sets the target position.

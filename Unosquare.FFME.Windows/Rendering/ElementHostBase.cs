@@ -139,11 +139,11 @@
             if (action == null)
                 return Task.CompletedTask;
 
-            if (ElementDispatcher == null || ElementDispatcher.HasShutdownStarted || ElementDispatcher.HasShutdownFinished)
+            if (ElementDispatcher is null || ElementDispatcher.HasShutdownStarted || ElementDispatcher.HasShutdownFinished)
                 return Task.CompletedTask;
 
             if (Thread.CurrentThread != ElementDispatcher?.Thread)
-                return ElementDispatcher?.BeginInvoke(action, priority).Task;
+                return ElementDispatcher?.BeginInvoke(action, priority).Task ?? Task.CompletedTask;
 
             action();
             return Task.CompletedTask;

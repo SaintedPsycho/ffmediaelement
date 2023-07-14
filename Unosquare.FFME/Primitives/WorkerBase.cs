@@ -159,10 +159,14 @@
         /// <summary>
         /// Releases unmanaged and optionally managed resources.
         /// </summary>
-        /// <param name="alsoManaged">Determines if managed resources hsould also be released.</param>
+        /// <param name="alsoManaged">Determines if managed resources should also be released.</param>
         protected virtual void Dispose(bool alsoManaged)
         {
-            StopAsync().Wait(TimeSpan.FromSeconds(1.5));
+            try
+            {
+                StopAsync().Wait(TimeSpan.FromSeconds(1));
+            }
+            catch { /* Ignore */ }
 
             lock (SyncLock)
             {
@@ -236,9 +240,9 @@
         }
 
         /// <summary>
-        /// Executes the cyle calling the user-defined code.
+        /// Executes the cycle calling the user-defined code.
         /// </summary>
-        protected void ExecuteCyle()
+        protected void ExecuteCycle()
         {
             lock (SyncLock)
             {
@@ -246,7 +250,7 @@
                 if (TokenSource.IsCancellationRequested)
                 {
                     TokenSource.Dispose();
-                    TokenSource = new CancellationTokenSource();
+                    Interlocked.Exchange(ref TokenSource, new CancellationTokenSource());
                 }
             }
 

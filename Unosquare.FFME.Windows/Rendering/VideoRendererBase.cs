@@ -220,7 +220,7 @@
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void FinishRenderingCycle(VideoBlock block, TimeSpan clockPosition)
         {
-            // Alwasy set the progress to false to allow for next cycle.
+            // Always set the progress to false to allow for next cycle.
             IsRenderingInProgress = false;
 
             // Update the layout including pixel ratio and video rotation
