@@ -13,7 +13,7 @@
 		<CodeAnalysisRuleSet>..\Analyzers.ruleset</CodeAnalysisRuleSet>
 		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
 		<NeutralLanguage>en</NeutralLanguage>
-		<TargetFrameworks>net6.0-windows;net48</TargetFrameworks>
+		<TargetFrameworks>net6.0-windows;net48;net481</TargetFrameworks>
 
 		<!-- Assembly Version Information -->
 		<AssemblyVersion>4.4.360.0</AssemblyVersion>
@@ -65,8 +65,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FFmpeg.AutoGen" Version="6.0.0.2" />
-		<PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="7.0.3">
+		<PackageReference Include="FFmpeg.AutoGen" Version="6.1.0.1" />
+		<PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

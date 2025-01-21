@@ -24,7 +24,8 @@
             FFLibrary.LibAVFormat.FlagId |
             FFLibrary.LibAVUtil.FlagId |
             FFLibrary.LibSWResample.FlagId |
-            FFLibrary.LibSWScale.FlagId;
+            FFLibrary.LibSWScale.FlagId |
+            FFLibrary.LibOpenH264.FlagId;
 
         /// <summary>
         /// Loads everything except for AVDevice and AVFilter.
@@ -34,7 +35,8 @@
             FFLibrary.LibAVFormat.FlagId |
             FFLibrary.LibAVUtil.FlagId |
             FFLibrary.LibSWResample.FlagId |
-            FFLibrary.LibSWScale.FlagId;
+            FFLibrary.LibSWScale.FlagId |
+            FFLibrary.LibOpenH264.FlagId;
 
         /// <summary>
         /// Loads the minimum set for Audio-only programs.
@@ -52,6 +54,7 @@
             FFLibrary.LibAVCodec.FlagId |
             FFLibrary.LibAVFormat.FlagId |
             FFLibrary.LibAVUtil.FlagId |
-            FFLibrary.LibSWScale.FlagId;
+            FFLibrary.LibSWScale.FlagId |
+            FFLibrary.LibOpenH264.FlagId;
     }
 }

@@ -67,8 +67,17 @@
             FrameHeight = CodecContext->height;
 
             // Retrieve Matrix Rotation
-            var displayMatrixRef = ffmpeg.av_stream_get_side_data(Stream, AVPacketSideDataType.AV_PKT_DATA_DISPLAYMATRIX, null);
-            DisplayRotation = ComputeRotation(displayMatrixRef);
+            if (Stream->codecpar != null)
+            {
+                for (int i = 0; i < Stream->codecpar->nb_coded_side_data; i++)
+                {
+                    AVPacketSideData* sideData = (&Stream->codecpar->coded_side_data)[i];
+                    if (sideData->type == AVPacketSideDataType.AV_PKT_DATA_DISPLAYMATRIX)
+                    {
+                        DisplayRotation = ComputeRotation(sideData->data);
+                    }
+                }
+            }
 
             var aspectRatio = ffmpeg.av_d2q((double)FrameWidth / FrameHeight, int.MaxValue);
             DisplayAspectWidth = aspectRatio.num;

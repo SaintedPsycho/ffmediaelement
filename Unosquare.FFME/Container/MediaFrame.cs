@@ -25,7 +25,15 @@
         protected MediaFrame(AVFrame* pointer, MediaComponent component, MediaType mediaType)
             : this((void*)pointer, component, mediaType)
         {
-            var packetSize = pointer->pkt_size;
+            int packetSize = 0;
+            if ((IntPtr)pointer->opaque != IntPtr.Zero)
+            {
+                packetSize = Marshal.ReadInt32((IntPtr)pointer->opaque);
+
+                Marshal.FreeHGlobal((IntPtr)pointer->opaque);
+                pointer->opaque = null;
+            }
+
             CompressedSize = packetSize > 0 ? packetSize : 0;
             PresentationTime = pointer->pts;
             DecodingTime = pointer->pkt_dts;

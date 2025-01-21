@@ -7,6 +7,7 @@ namespace Unosquare.FFME.Container
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Sockets;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
 
@@ -984,6 +985,10 @@ namespace Unosquare.FFME.Container
 
             // Check if we were able to feed the packet. If not, simply discard it
             if (readPacket == null) return MediaType.None;
+
+            IntPtr packetSizePtr = Marshal.AllocHGlobal(sizeof(int));
+            Marshal.WriteInt32(packetSizePtr, readPacket.Pointer->size);
+            readPacket.Pointer->opaque = (void*)packetSizePtr;
 
             // Push a data packet if its not a media component.
             if (Data.TryHandleDataPacket(this, readPacket))

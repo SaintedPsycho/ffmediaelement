@@ -1,4 +1,6 @@
-﻿namespace Unosquare.FFME.Container
+﻿// Ignore Spelling: Codec
+
+namespace Unosquare.FFME.Container
 {
     using Common;
     using Diagnostics;
@@ -101,7 +103,10 @@
             }
 
             // Find the default decoder codec from the stream and set it.
-            var defaultCodec = ffmpeg.avcodec_find_decoder(Stream->codecpar->codec_id);
+            var defaultCodec = Stream->codecpar->codec_id == AVCodecID.AV_CODEC_ID_H264
+                ? ffmpeg.avcodec_find_decoder_by_name("libopenh264")
+                : ffmpeg.avcodec_find_decoder(Stream->codecpar->codec_id);
+
             AVCodec* forcedCodec = null;
 
             // If set, change the codec to the forced codec.
@@ -137,6 +142,7 @@
 
                 // Pass default codec stuff to the codec context
                 CodecContext->codec_id = codec->id;
+                CodecContext->flags |= ffmpeg.AV_CODEC_FLAG_COPY_OPAQUE;
 
                 // Process the decoder options
                 {

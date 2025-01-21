@@ -105,6 +105,11 @@ namespace FFmpeg.AutoGen
         /// </summary>
         public static FFLibrary LibAVFilter { get; } = new FFLibrary(Names.AVFilter, 9, 128);
 
+        /// <summary>
+        /// Gets the AVFilter library.
+        /// </summary>
+        public static FFLibrary LibOpenH264 { get; } = new FFLibrary(Names.LibOpenH264, 7, 256);
+
         #endregion
 
         #region Instance Properties
@@ -190,6 +195,7 @@ namespace FFmpeg.AutoGen
             public const string SWScale = "swscale";
             public const string AVDevice = "avdevice";
             public const string PostProc = "postproc";
+            public const string LibOpenH264 = "libopenh264";
         }
 
         #endregion
