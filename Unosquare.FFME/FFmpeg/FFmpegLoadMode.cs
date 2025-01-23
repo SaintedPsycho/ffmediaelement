@@ -19,7 +19,6 @@
         public static int FullFeatures { get; } =
             FFLibrary.LibAVCodec.FlagId |
             FFLibrary.LibAVDevice.FlagId |
-            FFLibrary.LibPostProc.FlagId |
             FFLibrary.LibAVFilter.FlagId |
             FFLibrary.LibAVFormat.FlagId |
             FFLibrary.LibAVUtil.FlagId |

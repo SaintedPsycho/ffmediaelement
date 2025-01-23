@@ -37,7 +37,6 @@ namespace FFmpeg.AutoGen
                 LibSWScale,
                 LibAVCodec,
                 LibAVFormat,
-                LibPostProc,
                 LibAVFilter,
                 LibAVDevice
             };
@@ -94,11 +93,6 @@ namespace FFmpeg.AutoGen
         /// Gets the AVDevice library.
         /// </summary>
         public static FFLibrary LibAVDevice { get; } = new FFLibrary(Names.AVDevice, 60, 32);
-
-        /// <summary>
-        /// Gets the Post-processing library.
-        /// </summary>
-        public static FFLibrary LibPostProc { get; } = new FFLibrary(Names.PostProc, 57, 64);
 
         /// <summary>
         /// Gets the AVFilter library.
@@ -194,7 +188,6 @@ namespace FFmpeg.AutoGen
             public const string SWResample = "swresample";
             public const string SWScale = "swscale";
             public const string AVDevice = "avdevice";
-            public const string PostProc = "postproc";
             public const string LibOpenH264 = "libopenh264";
         }
 

@@ -70,7 +70,12 @@
                     break;
                 }
 
-                try { Container.Read(); }
+                try
+                {
+                    var type = Container.Read();
+                    if (type == MediaType.None)
+                        break;
+                }
                 catch (MediaContainerException) { /* ignore */ }
             }
         }

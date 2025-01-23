@@ -249,12 +249,15 @@
                     {
                         // Check if we are already in range
                         hasSeekBlocks = TrySignalBlocksAvailable(targetSeekMode, mainBlocks, targetPosition, hasSeekBlocks);
-                        if (hasSeekBlocks) break;
+                        if (hasSeekBlocks)
+                            break;
 
                         // Read the next packet
-                        _ = MediaCore.Container.Read();
-                        IList<MediaFrame> frames = MediaCore.Container.Decode();
+                        var type = MediaCore.Container.Read();
+                        if (type == MediaType.None)
+                            break;
 
+                        IList<MediaFrame> frames = MediaCore.Container.Decode();
                         foreach (var frame in frames)
                         {
                             MediaBlockBuffer blocks = MediaCore.Blocks[frame.MediaType];

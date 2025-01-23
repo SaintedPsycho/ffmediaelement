@@ -7,7 +7,6 @@ namespace Unosquare.FFME.Container
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Net.Sockets;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
 
@@ -1247,9 +1246,15 @@ namespace Unosquare.FFME.Container
                     return frame;
 
                 if (!IsAtEndOfStream)
-                    Read();
-                else
-                    return null;
+                {
+                    var type = Read();
+                    if (type == MediaType.None)
+                        return null;
+
+                    continue;
+                }
+
+                return null;
             }
 
             return null;

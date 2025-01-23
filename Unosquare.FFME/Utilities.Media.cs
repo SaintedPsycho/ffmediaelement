@@ -41,7 +41,10 @@
             var outputFrames = new List<MediaFrame>(1024 * 8);
             while (true)
             {
-                tempContainer.Read();
+                var type = tempContainer.Read();
+                if (type == MediaType.None)
+                    break;
+
                 var frames = tempContainer.Decode();
                 foreach (var frame in frames)
                 {

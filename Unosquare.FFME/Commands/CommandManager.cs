@@ -244,6 +244,20 @@ namespace Unosquare.FFME.Commands
                     // Resume the workers since the seek media operation
                     // might have required pausing them.
                     State.ReportPlaybackPosition();
+                    if (State.NaturalDuration.HasValue && State.Position + State.PositionStep >= State.NaturalDuration)
+                    {
+                        this.LogInfo(Aspects.None, $"Close to the end. Seeking overflow. {State.Position}/{State.NaturalDuration}");
+
+                        PlayAfterSeek = false;
+                        State.ReportPlaybackPosition(State.NaturalDuration.Value);
+
+                        MediaCore.SendOnSeekingEnded();
+                        MediaCore.Workers.ResumePaused();
+
+                        State.HasMediaEnded = true;
+                        return;
+                    }
+
                     MediaCore.Workers.ResumePaused();
 
                     // Resume if requested

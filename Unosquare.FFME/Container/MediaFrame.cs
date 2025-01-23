@@ -29,9 +29,6 @@
             if ((IntPtr)pointer->opaque != IntPtr.Zero)
             {
                 packetSize = Marshal.ReadInt32((IntPtr)pointer->opaque);
-
-                Marshal.FreeHGlobal((IntPtr)pointer->opaque);
-                pointer->opaque = null;
             }
 
             CompressedSize = packetSize > 0 ? packetSize : 0;

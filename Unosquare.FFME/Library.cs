@@ -340,7 +340,10 @@ namespace Unosquare.FFME
                 result.StreamIndex = container.Components.Video.StreamIndex;
                 while (container.IsStreamSeekable)
                 {
-                    container.Read();
+                    var type = container.Read();
+                    if (type == MediaType.None)
+                        break;
+
                     var frames = container.Decode();
                     foreach (var frame in frames)
                     {

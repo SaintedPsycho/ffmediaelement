@@ -209,7 +209,13 @@
         /// Interrupts a cycle or a wait operation.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void Interrupt() => TokenSource.Cancel();
+        protected void Interrupt()
+        {
+            if (TokenSource.IsCancellationRequested)
+                return;
+
+            TokenSource.Cancel();
+        }
 
         /// <summary>
         /// Tries to acquire a cycle for execution.
