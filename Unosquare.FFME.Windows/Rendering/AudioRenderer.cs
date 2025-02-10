@@ -249,7 +249,6 @@
             {
                 AudioBuffer?.Clear();
 
-                // AudioDevice?.Clear(); // TODO: This causes crashes
                 if (ReadBuffer != null)
                     Array.Clear(ReadBuffer, 0, ReadBuffer.Length);
             }
